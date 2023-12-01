@@ -76,7 +76,7 @@ def main():
         budgetIndex = 1
         for budget in budgets:
             budgetsSpentUrl = config['firefly-url'] + '/api/v1/budgets/' + str(
-                budgetIndex) + '/limits?start=' + startDate.strftime('%Y-%m-%d') + endDate.strftime('%Y-%m-%d')
+                budgetIndex) + '/limits?start=' + startDate.strftime('%Y-%m-%d') + '&end=' + endDate.strftime('%Y-%m-%d')
             budgetsSpentCategories = s.get(budgetsSpentUrl).json()
             # Get the spent for the current budget
             # Check is data is non-empty
