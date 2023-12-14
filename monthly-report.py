@@ -71,21 +71,36 @@ def main():
             name = budget['attributes']['name']
             amount = budget['attributes']['auto_budget_amount']
             budgets.append({'name': name, 'budgeted': amount})
+            
+        # Find budgets by name function 
+        def find_budget_index(budgets_list, name_to_find):
+            for index, budget in enumerate(budgets_list):
+                if budget['name'] == name_to_find:
+                    return index  # Return the index of the budget item if its name matches
+
+            return None 
         #
         # Get all the budgets spent
-        budgetIndex = 1
+        budgetFetchIndex = 1
         for budget in budgets:
             budgetsSpentUrl = config['firefly-url'] + '/api/v1/budgets/' + str(
-                budgetIndex) + '/limits?start=' + startDate.strftime('%Y-%m-%d') + '&end=' + endDate.strftime('%Y-%m-%d')
+                budgetFetchIndex) + '/limits?start=' + startDate.strftime('%Y-%m-%d') + endDate.strftime('%Y-%m-%d')
             budgetsSpentCategories = s.get(budgetsSpentUrl).json()
+            if budgetsSpentCategories == {'message': 'Resource not found', 'exception': 'NotFoundHttpException'}:
+                budgetFetchIndex += 1
+                budgetsSpentUrl = config['firefly-url'] + '/api/v1/budgets/' + str(
+                    budgetFetchIndex) + '/limits?start=' + startDate.strftime('%Y-%m-%d') + endDate.strftime('%Y-%m-%d')
+                budgetsSpentCategories = s.get(budgetsSpentUrl).json()
+            else:
+                pass
             # Get the spent for the current budget
             # Check is data is non-empty
-            if len(budgetsSpentCategories['data']) > 0:
-                spent = budgetsSpentCategories['data'][0]['attributes']['spent']
-                # Update the 'spent' value for the current budget item
-                budgets[budgetIndex - 1]['spent'] = round(abs(float(spent)), 2)
-                # Increment budgetIndex for the next iteration
-            budgetIndex += 1
+            spent = budgetsSpentCategories['data'][0]['attributes']['spent']
+            # Update the 'spent' value for the current budget item
+            found_index = find_budget_index(budgets, budgetsSpentCategories['included'][0]['attributes']['name'])
+            budgets[found_index]['spent'] = round(abs(float(spent)), 2)
+            # Increment budgetIndex for the next iteration
+            budgetFetchIndex += 1
         #
         # Get general information
         monthSummary = s.get(config['firefly-url'] + '/api/v1/summary/basic' + '?start=' +
