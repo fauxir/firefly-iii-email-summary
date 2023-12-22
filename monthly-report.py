@@ -86,13 +86,24 @@ def main():
             budgetsSpentUrl = config['firefly-url'] + '/api/v1/budgets/' + str(
                 budgetFetchIndex) + '/limits?start=' + startDate.strftime('%Y-%m-%d') + endDate.strftime('%Y-%m-%d')
             budgetsSpentCategories = s.get(budgetsSpentUrl).json()
-            if budgetsSpentCategories == {'message': 'Resource not found', 'exception': 'NotFoundHttpException'}:
-                budgetFetchIndex += 1
-                budgetsSpentUrl = config['firefly-url'] + '/api/v1/budgets/' + str(
-                    budgetFetchIndex) + '/limits?start=' + startDate.strftime('%Y-%m-%d') + endDate.strftime('%Y-%m-%d')
-                budgetsSpentCategories = s.get(budgetsSpentUrl).json()
-            else:
-                pass
+            # Check if we're getting valid budget data
+            def first_property_is_data(obj):
+                # Ensure object is a dictionary and is not empty
+                if not isinstance(obj, dict) or not obj:
+                    return False
+    
+                # Get the first key in the object
+                first_key = next(iter(obj))
+    
+                # Check if the first key is 'data'
+                return first_key == 'data'
+            while True:
+                if not first_property_is_data(budgetsSpentCategories):
+                    budgetFetchIndex += 1
+                    budgetsSpentUrl = config['firefly-url'] + '/api/v1/budgets/' + str(budgetFetchIndex) + '/limits?start=' + startDate.strftime('%Y-%m-%d') + endDate.strftime('%Y-%m-%d')
+                    budgetsSpentCategories = s.get(budgetsSpentUrl).json()
+                else:
+                    break  # Exit the loop if the condition is not met
             # Get the spent for the current budget
             # Check is data is non-empty
             spent = budgetsSpentCategories['data'][0]['attributes']['spent']
